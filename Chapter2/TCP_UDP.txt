@@ -1,0 +1,105 @@
+## TCP and UDP
+
+As we discussed earlier in this chapter in the Transport layer section,
+TCP and UDP are the main protocols that are used to transfer data across a network.
+The delivery mechanisms that they have are different from each other.
+TCP has acknowledgments, sequence numbers, and flow control in transferring data process to provide a guaranteed delivery,
+whereas UDP does not provide a guaranteed delivery but provides a delivery with best efforts.
+
+
+# Transmission Control Protocol (TCP)
+
+TCP performs a three-way handshaking process before the protocol establishes the session.
+This is done in order to provide a guaranteed delivery.
+Refer to the following figure to understand the three-way handshaking process:
+------------------------------------------
+PC1     |  (1) -> SYN ->         |   PC2
+        |  (2) <- SYN/ACK <-     | 
+        |  (3) -> ACK ->         |
+        | <- Data transmiting -> |
+------------------------------------------
+
+PC1 device wants to transfer data to PC2 device and that they need to perform a three-way handshaking process.
+First, PC1 device sends a packet to PC2 device with the synchronize (SYN) flag enabled.
+Once PC2 device receives the packet, it replies with sending another packet that has both the SYN and acknowledge (ACK) flags enabled.
+Lastly, PC1 device completes the handshaking process by sending a third packet with the ACK flag enabled.
+Now, both devices have an established session and an assurance that the other device is working.
+The data transmission is then ready to take place after the session is established.
+
+# SYN-Flood
+In the security area, we know the term "SYN-Flood", which is a denial-of-service attack,
+where an attacker sends a sequence of SYN requests to a target's system in an attempt to consume enough server resources
+to make the system unresponsive to legitimate traffic.
+The attacker just sends SYN without sending the expected ACK,
+causing the server to send the SYN-ACK to a falsified IP address — which will not send an ACK because it "knows" that it never sent the SYN.
+
+TCP also splits up the data into smaller segments and uses sequence numbers to track these segments.
+Each separated segment is assigned different sequence numbers, such as 1 to 20.
+The destination device then receives each segment and uses the sequence numbers to reassemble (create) the file based on the order of the sequence.
+
+For instance, consider that PC1 wants to download a JPEG image file from PC2 device.
+After establishing the session in a three-way handshaking process,
+the two devices determine how big the single segment is and how many segments need to be sent between acknowledgments.
+The total number of segments that can be sent at a time is known as the TCP sliding window.
+The data in the segment is not valid anymore if a single bit is broken or lost in transmission.
+TCP uses Cyclical Redundancy Check (CRC) to identify the broken or lost data by verifying that the data is intact in each segment.
+If there is any corrupt or missing segment in transmission, PC1 device will send a negative acknowledge (NACK) packet
+and then will request the corrupt or missing segment; otherwise, PC1 device will send an ACK packet and request the next segment.
+
+
+# User Datagram Protocol
+UDP does not perform any handshaking process before sending data.
+It just sends the data directly to the destination device;
+however, it puts in its best effort to forward the messages.
+
+Imagine that we are waiting for a call from our friend.
+We call his/her phone. If our call is not answered, we can send the e-mail or text message to inform our friend.
+However, all techniques that we talked about do not give any assurance that our message was received.
+But still, we make our best efforts to forward the message until this works.
+This our best effort in analogy of UDP.
+
+So, why is UDP used even though it is not reliable?
+Sometimes we need a communication which has fast speed data transfer even though has a little bit data corruption.
+For instance, streaming audio, streaming video, and Voice over IP (VoIP) use UDP to make sure that they have fast speed data transfer.
+Although the UDP must have had lost packets, we are still able to get all the messages clearly.
+
+UDP does not:
+ - check the connection before transmitting data.
+UDP does:
+ - uses a checksum to validate the data.
+The checksum can check whether the received data is altered or not by comparing the checksum value.
+
+
+# Ports
+In computer networking, a port is an endpoint to send or receive data.
+A port is recognized by its port number, which contains a 16-bit number.
+The logical port number is used by both TCP and UDP to trace the contents of a packet
+and helps TCP/IP obtain the packet of the application or service that will process the data when it is received by the device.
+
+There are a total of 65536 TCP ports and 65536 UDP ports. We can divide the TCP ports into three port ranges, which are:
+ - Well-known ports from 0 to 1023 are ports that have been registered by the Internet Assigned Numbers Authority (IANA) to associate with specific protocols or applications.
+ - Registered ports from 1024 to 49151 are ports that have been registered by IANA for a specific protocol, but unused ports in this range can be assigned by computer applications.
+ - Dynamic ports from 49152 to 65535 are unregistered ports and can be assigned for any purpose.
+
+Example Send Email:
+We have an e-mail client installed in our computer (Microsoft Outlook). 
+Now, we want to send an e-mail to the Gmail server and then grab all the incoming e-mails from the server to save them on our local computer.
+The steps to send an e-mail are as follows:
+ - Our computer assigns a random unused port number, such as 48127, to send the e-mail to the Gmail SMTP server to the port 25.
+ - When the e-mail arrives at the SMTP server, it recognizes that the data has come from the port 25
+   and then forwards the data to the SMTP, which handles the service.
+ - Once the e-mail is received, the server sends the acknowledgement to the port 48127 in our computer
+   to inform the computer that the e-mail has been received.
+ - After our computer completely receives the acknowledgement from the port 48127,
+   it sends an e-mail to the e-mail client, and the e-mail client then moves the e-mail from Outbox to the Sent folder.
+ 
+Example Receive Email:
+The steps for which are as follows:
+- Our computer assigns a random unused port number, such as 48128, to send a request to the Gmail POP3 server to the port 110.
+- When the e-mail arrives at the POP3 server, it recognizes that the data has come from the port 110
+  and then forwards the data to POP3, which handles the service.
+- The POP3 server then sends an e-mail to our computer on the port 48128.
+- After our computer receives the e-mail from the port 48128, it sends the e-mail to our e-mail client
+  and then moves it to the Inbox folder. It also automatically saves the mail to the local computer.
+
+
