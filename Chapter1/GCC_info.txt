@@ -1,0 +1,39 @@
+# The -ansi option alone does not cause non-ISO programs to be rejected gratuitously.
+# For that, the -pedantic option or the -pedantic-errors option is required in addition with the -ansi option.
+# It is important to use the -ansi and -pedantic options so that your source code is able to be compiled in any compiler,
+# as it will check the ANSI standard and reject non-ISO programs.
+
+g++ -Wall -ansi hash.cpp -o hash
+g++ -Wall -std=c++98 hash.cpp -o hash
+g++ -Wall -std=c++03 hash.cpp -o hash
+g++ -Wall -std=c++11 hash.cpp -o hash
+
+
+
+
+# The -v option can also be used to display detailed information about the exact sequence of commands that are used to compile and link a program.
+# The -Wall option (Warning All).
+g++ -v -Wall rangen.cpp
+
+Output:
+Using built-in specs.
+COLLECT_GCC=g++
+Target: x86_64-linux-gnu
+Thread model: posix
+#include "..." search starts here:
+#include <...> search starts here:
+ /usr/include/c++/10
+ /usr/include/x86_64-linux-gnu/c++/10
+ /usr/include/c++/10/backward
+ /usr/lib/gcc/x86_64-linux-gnu/10/include
+ /usr/local/include
+ COMPILER_PATH=/usr/lib/gcc/x86_64-linux-gnu/10/:/usr/lib/gcc/x86_64-linux-gnu/10/:/usr/lib/gcc/x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/10/:/usr/lib/gcc/x86_64-linux-gnu/
+ LIBRARY_PATH=
+ COLLECT_GCC_OPTIONS='-v' '-Wall' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+...
+
+# The output produced by the -v option can be useful whenever there is a problem with the compilation process itself. 
+# It displays the full directory paths used to search for header files and libraries, the predefined preprocessor symbols,
+# and the object files and libraries used for linking.
+
+
