@@ -103,3 +103,60 @@ The steps for which are as follows:
   and then moves it to the Inbox folder. It also automatically saves the mail to the local computer.
 
 
+# Internet Protocol (IP)
+IP is a primary communication protocol that is used to deliver a datagram across networks.
+The datagram itself is a transfer unit associated with a packet-switched network.
+The role of IP is to deliver packets from the host to the host based on the IP address,
+which is stated in the packet's header
+
+An IP address must contain these two components: a network ID to identify the subnetwork or subnet where the computer is located
+and a host ID to identify the computer within that subnet. Every network ID indicates a group of hosts on a subnet of a network.
+For local networks, the subnet mask is used to identify the portion of a network ID and a host ID in the IP address.
+
+Example:
+IP: 190.23.4.51
+Subnet mask: 255.255.0.0
+Boolean AND logic to find out the network ID.
+Network ID = IP & SM = 190.23.4.51 & 255.255.0.0 = 190.23.0.0
+Network ID: 190.23.0.0
+Host ID: 0.0.4.51
+
+
+# TCP/IP tools for troubleshooting
+
+Displaying the full configuration information:
+> ipconfig /all
+
+Displaying DNS:
+> ipconfig /displaydns
+
+The ping command is used to examine the connectivity with other computers.
+It uses Internet Control Message Protocol (ICMP) to send a message to target computers.
+We can use the IP address and hostname to ping the target.
+Suppose we have a device whose hostname is HOST1, to ping itself, we can use the following command:
+> ping HOST1
+
+The tracert command
+When we have more than one router, we can use the tracert command to trace the path that is taken by the packets.
+Tracert has the information about the router between the source and the destination devices.
+Command that traces the communication track from my device to google.com:
+> tracert google.com
+
+The pathping command
+The pathping command is used to verify the routed path.
+It examines the route of two devices just like the tracert command does, and then checks the connectivity in each router like the ping command does.
+The pathping command sends 100 request commands to each router and expects to get 100 replies back.
+For every request that is not replied, the pathping command will count it as 1 percent data loss.
+So if, for instance, there are ten requests that do not reply back, there will be 10 percent data loss.
+The smaller the percentage of data loss, the better connection we have.
+> pathping google.com
+
+The netstat command
+The netstat (stands for network statistics) command is used to view the TCP/IP statistics
+by displaying all the information about the TCP/IP connection in the current device.
+It will show information about connections, ports, and applications that are involved in the network:
+> netstat
+
+The telnet command
+The telnet (stands for Terminal Network) command is used to access remote computers over the TCP/IP network.
+> telnet
