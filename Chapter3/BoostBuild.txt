@@ -1,0 +1,61 @@
+The Boost.Random library needs to be compiled separately if we want to use the <boost/random/random_device.hpp> attribute.
+
+Boost libraries have a system to compile or build Boost itself, called Boost.Build library.
+There are two steps we have to achieve to install the Boost.Build library.
+1.1. Run Bootstrap with the following command for Windows:
+> bootstrap.bat mingw
+
+1.2. Run Bootstrap with the following command for Linux:
+> sh bootstrap.sh
+
+2. Run build:
+> ./b2
+or 
+> ./b2 install toolset=gcc
+And when building had finished, you saw the output you've posted.
+After it tells you that your successful boost build
+we it can be used in client projects by specifying the compiler search option:
+-I /home/max/sources/boost_1_58_0 and
+the linker search option -L /home/max/sources/boost_1_58_0/stage/lib.
+You can your use boost libraries like that, from the build directory: /home/max/sources/boost_1_58_0 , without installing them. 
+
+3. If we want to install Boost:
+3.1. Compile before installation:
+> ./bootstrap.sh --prefix=path/to/installation/prefix
+> ./bootstrap.sh --prefix=/usr/local
+
+3.2. Run build with Install:
+> ./b2 install toolset=gcc
+With Sudo if it's /usr/local/ folder was used for compile:
+> sudo ./b2 install toolset=gcc
+
+3.3. Add path for linker:
+// export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+
+4. How to remove installed Boost:
+> rm -f /usr/local/lib/libboost* 
+> rm -rf /usr/local/include/boost
+
+5. Check Boost version:
+> cat /usr/local/include/boost/version.hpp | grep "BOOST_LIB_VERSION"
+// export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+# Boost structure:
+b2.exe: This is an executable file to build Boost libraries
+bjam.exe: This is exactly the same as b2.exe but it is a legacy version
+bootstrap.log: This contains logs from the bootstrap process
+project-config.jam: This contains a setting that will be used in the building process when we run b2.exe
+New directory which contains a bunch of .obj files associated with Boost libraries that needed to be compiled:
+/home/max/sources/boost_1_58_0/tools/build/src/engine/bin.ntx86
+New directory which contains a collection of static and dynamic libraries that we can use directly in our program:
+/home/max/sources/boost_1_58_0/stage/lib/
+
+
+// Build with lboost_random:
+// 1. Add path for linker to find lboost_random and lboost_system:
+// export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+// 2.1. Compile with sources path:
+// g++ -ansi rangen_boost.cpp -I /home/max/sources/boost_1_58_0 -L /usr/local/lib/ -lboost_random -lboost_system -o rangen2_boost
+// 2.2. Compile with default path if Boost was installed:
+// g++ -ansi rangen_boost.cpp -I /usr/local/include -L /usr/local/lib/ -lboost_random -lboost_system -o rangen2_boost

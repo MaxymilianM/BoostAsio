@@ -1,0 +1,30 @@
+Building Boost libraries
+As we discussed previously, most libraries in Boost are header-only, but not all of them.
+There are some libraries that have to be built separately.
+
+They are:
+Boost.Chrono: This is used to show the variety of clocks, such as current time, the range between two times, or calculating the time passed in the process.
+Boost.Context: This is used to create higher-level abstractions, such as coroutines and cooperative threads.
+Boost.Filesystem: This is used to deal with files and directories, such as obtaining the file path or checking whether a file or directory exists.
+Boost.GraphParallel: This is an extension to the Boost Graph Library (BGL) for parallel and distributed computing.
+Boost.IOStreams: This is used to write and read data using stream. For instance, it loads the content of a file to memory or writes compressed data in GZIP format.
+Boost.Locale: This is used to localize the application, in other words, translate the application interface to user's language.
+Boost.MPI: This is used to develop a program that executes tasks concurrently. MPI itself stands for Message Passing Interface.
+Boost.ProgramOptions: This is used to parse command-line options. Instead of using the argv variable in the main parameter, it uses double minus (--) to separate each command-line option.
+Boost.Python: This is used to parse Python language in C++ code.
+Boost.Regex: This is used to apply regular expression in our code. But if our development supports C++11, we do not depend on the Boost.Regex library anymore since it is available in the regex header file.
+Boost.Serialization: This is used to convert objects into a series of bytes that can be saved and then restored again into the same object.
+Boost.Signals: This is used to create signals. The signal will trigger an event to run a function on it.
+Boost.System: This is used to define errors. It contains four classes: system::error_code, system::error_category, system::error_condition, and system::system_error. All of these classes are inside the boost namespace. It is also supported in the C++11 environment, but because many Boost libraries use Boost.System, it is necessary to keep including Boost.System.
+Boost.Thread: This is used to apply threading programming. It provides classes to synchronize access on multiple-thread data. In C++11 environments, the Boost.Thread library offers extensions, so we can interrupt thread in Boost.Thread.
+Boost.Timer: This is used to measure the code performance by using clocks. It measures time passed based on usual clock and CPU time, which states how much time has been spent to execute the code.
+Boost.Wave: This provides a reusable C preprocessor that we can use in our C++ code.
+
+There are also a few libraries that have optional, separately compiled binaries.
+They are as follows:
+Boost.DateTime: It is used to process time data; for instance, calendar dates and time. It has a binary component that is only needed if we use to_string, from_string, or serialization features. It is also needed if we target our application in Visual C++ 6.x or Borland.
+Boost.Graph: It is used to create two-dimensional graphics. It has a binary component that is only needed if we intend to parse GraphViz files.
+Boost.Math: It is used to deal with mathematical formulas. It has binary components for cmath functions.
+Boost.Random: It is used to generate random numbers. It has a binary component, which is only needed if we want to use random_device.
+Boost.Test: It is used to write and organize test programs and their runtime execution. It can be used in header-only or separately compiled mode, but separate compilation is recommended for serious use.
+Boost.Exception: It is used to add data to an exception after it has been thrown. It provides non-intrusive implementation of exception_ptr for 32-bit _MSC_VER==1310 and _MSC_VER==1400, which requires a separately compiled binary. This is enabled by #define BOOST_ENABLE_NON_INTRUSIVE_EXCEPTION_PTR.
