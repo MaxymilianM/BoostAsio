@@ -59,3 +59,4 @@ New directory which contains a collection of static and dynamic libraries that w
 // g++ -ansi rangen_boost.cpp -I /home/max/sources/boost_1_58_0 -L /usr/local/lib/ -lboost_random -lboost_system -o rangen2_boost
 // 2.2. Compile with default path if Boost was installed:
 // g++ -ansi rangen_boost.cpp -I /usr/local/include -L /usr/local/lib/ -lboost_random -lboost_system -o rangen2_boost
+

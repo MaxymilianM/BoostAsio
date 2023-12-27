@@ -28,3 +28,11 @@ Boost.Math: It is used to deal with mathematical formulas. It has binary compone
 Boost.Random: It is used to generate random numbers. It has a binary component, which is only needed if we want to use random_device.
 Boost.Test: It is used to write and organize test programs and their runtime execution. It can be used in header-only or separately compiled mode, but separate compilation is recommended for serious use.
 Boost.Exception: It is used to add data to an exception after it has been thrown. It provides non-intrusive implementation of exception_ptr for 32-bit _MSC_VER==1310 and _MSC_VER==1400, which requires a separately compiled binary. This is enabled by #define BOOST_ENABLE_NON_INTRUSIVE_EXCEPTION_PTR.
+
+
+Boost.Asio:
+In order to create a network application, we are going to use the Boost.Asio library.
+We do not find Boost.Asio—the library that we are going to use to create a network application—in the non-header-only library.
+It seems that we do not need to build the Boost library since Boost.Asio is header-only library.
+This is true, but since Boost.Asio depends on Boost.System and Boost.System needs to be built before being used,
+it is important to build Boost first before we can use it to create our network application.
