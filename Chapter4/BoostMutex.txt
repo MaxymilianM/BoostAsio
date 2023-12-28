@@ -1,0 +1,4 @@
+
+How to avoid writing to output from different threads at once that cause output formatting issues?
+To solve this issue, we can use a mutex object that can be found in the boost::mutex object provided by the thread library.
+Mutex is used to synchronize access to any global data or shared data.

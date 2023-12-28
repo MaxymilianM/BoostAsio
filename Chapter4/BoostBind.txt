@@ -1,0 +1,4 @@
+
+The Boost.Bind library is used to ease the invocation of a function pointer.
+It converts the syntax from something that is abstruse and confusing to something that is easy to understand.
+

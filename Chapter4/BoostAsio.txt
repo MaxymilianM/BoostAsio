@@ -25,3 +25,17 @@ In programming, event is an action or occurrence detected by a program,
 which will be handled by the program using the event handler object.
 The io_service object has one or more instances where events are handled, which is event processing loop.
 
+# io_service:: run(), poll(), dispatch()
+There are two functions that we can use to get the io_service object working for us: the run() and poll() member functions.
+The run() function blocks the program because it has to wait for the work that we assign to it,
+while the poll() function does not block the program.
+When we need to give some work to the io_service object,
+we simply use the poll() or run() functions, depending on what we need,
+and then we call the post() or dispatch() functions as needed.
+The post() function is used to command the io_service object in order to run the given handler,
+but without permitting the handler is called by the io_service object from inside this function.
+While the dispatch() function is used to call the handler in the thread
+in which the run()or poll() functions are currently being invoked.
+The fundamental difference between the dispatch() and the post() functions is that
+the dispatch() function completes the work right away whenever it can,
+while the post() function always queues the work.
