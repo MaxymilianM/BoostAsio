@@ -25,7 +25,7 @@ In programming, event is an action or occurrence detected by a program,
 which will be handled by the program using the event handler object.
 The io_service object has one or more instances where events are handled, which is event processing loop.
 
-# io_service:: run(), poll(), dispatch()
+# io_service:: run(), poll(), post(), dispatch()
 There are two functions that we can use to get the io_service object working for us: the run() and poll() member functions.
 The run() function blocks the program because it has to wait for the work that we assign to it,
 while the poll() function does not block the program.
@@ -39,3 +39,21 @@ in which the run()or poll() functions are currently being invoked.
 The fundamental difference between the dispatch() and the post() functions is that
 the dispatch() function completes the work right away whenever it can,
 while the post() function always queues the work.
+
+#io_service:: strand
+Class that we use to wrap io_service object.
+So after every strand.post() call from different threads we will be ordered.
+
+#io_service:: stop()
+If it is system failure - we have to invoke the stop() function in the io_service class
+to ensure the work object has been destroyed in order for the program to be able to exit.
+
+#deadline_timer:: async_wait(), expires_from_now()
+The deadline_timer is a class that provides the ability to block or asynchronous wait
+for a timer until it expires, known as the deadline timer.
+A deadline timer indicates one of two states: expired or not expired.
+Before the program calls the binded function, it has to wait for n seconds
+because of usage expires_from_now() function from the timer object.
+The async_wait() function will wait until the timer has expired.
+In the binded function std::placeholders::_1 will be replaced
+with the first argument given from async_wait(), with type boost::system::error_code.
