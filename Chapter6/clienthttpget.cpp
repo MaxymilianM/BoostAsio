@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <boost/thread/mutex.hpp>
 #include <boost/chrono.hpp>
-#include <boost/thread/thread.hpp> 
+#include <boost/thread/thread.hpp>
 
-// g++ -ansi -std=c++11 wrapper.cpp echoserver.cpp -o echoserver -I /usr/local/include -L /usr/local/lib/ -lboost_system -lboost_thread -lpthread -lncurses -lboost_chrono
+// g++ -ansi -std=c++11 wrapper.cpp clienthttpget.cpp -o clienthttpget -I /usr/local/include -L /usr/local/lib/ -lboost_system -lboost_thread -lpthread -lncurses -lboost_chrono
 
 boost::mutex global_stream_lock;
 
@@ -17,27 +17,35 @@ private:
     std::cout << "[OnAccept] " << host << ":" << port << "\n";
     global_stream_lock.unlock();
 
+    // Start the next receive
     Recv();
   }
 
-  void OnConnect(const std::string & host, uint16_t port) {
+  void OnConnect(const std::string &host, uint16_t port) {
     global_stream_lock.lock();
     std::cout << "[OnConnect] " << host << ":" << port << "\n";
     global_stream_lock.unlock();
 
+    // Start the next receive
     Recv();
+
+    std::string str = "GET / HTTP/1.0\r\n\r\n";
+
+    std::vector<uint8_t> request;
+    std::copy(str.begin(), str.end(), std::back_inserter(request));
+    Send(request);
   }
 
-  void OnSend(const std::vector<uint8_t> & buffer) {
+  void OnSend(const std::vector<uint8_t> &buffer) {
     global_stream_lock.lock();
     std::cout << "[OnSend] " << buffer.size() << " bytes\n";
     for(size_t x=0; x<buffer.size(); x++) {
 
       std::cout << (char)buffer[x];
       if((x + 1) % 16 == 0)
-        std::cout << std::endl;
+        std::cout << "\n";
     }
-    std::cout << std::endl;
+    std::cout << "\n";
     global_stream_lock.unlock();
   }
 
@@ -48,21 +56,18 @@ private:
 
       std::cout << (char)buffer[x];
       if((x + 1) % 16 == 0)
-        std::cout << std::endl;
+        std::cout << "\n";
     }
-    std::cout << std::endl;
+    std::cout << "\n";
     global_stream_lock.unlock();
 
     // Start the next receive
     Recv();
-
-    // Echo the data back
-    Send(buffer);
   }
 
   void OnTimer(const boost::posix_time::time_duration &delta) {
     global_stream_lock.lock();
-    std::cout << "[OnTimer] " << delta << "\n";
+    std::cout << "[OnTimer] " << delta << std::endl;
     global_stream_lock.unlock();
   }
 
@@ -81,47 +86,11 @@ public:
   }
 };
 
-class MyAcceptor : public Acceptor {
-private:
-  bool OnAccept(boost::shared_ptr<Connection> connection, const std::string &host, uint16_t port) {
-    global_stream_lock.lock();
-    std::cout << "[OnAccept] " << host << ":" << port << "\n";
-    global_stream_lock.unlock();
-
-    return true;
-  }
-
-  void OnTimer(const boost::posix_time::time_duration &delta) {
-    global_stream_lock.lock();
-    std::cout << "[OnTimer] " << delta << "\n";
-    global_stream_lock.unlock();
-  }
-
-  void OnError(const boost::system::error_code &error) {
-    global_stream_lock.lock();
-    std::cout << "[OnError] " << error << "\n";
-    global_stream_lock.unlock();
-  }
-
-public:
-  MyAcceptor(boost::shared_ptr<Hive> hive)
-    : Acceptor(hive) {
-  }
-
-  ~MyAcceptor() {
-  }
-};
-
 int main(void) {
   boost::shared_ptr<Hive> hive(new Hive());
 
-  boost::shared_ptr<MyAcceptor> acceptor(new MyAcceptor(hive));
-  acceptor->Listen("127.0.0.1", 4444);
-
   boost::shared_ptr<MyConnection> connection(new MyConnection(hive));
-  acceptor->Accept(connection);
-
-  std::cout << "[Accept] done \n";
+  connection->Connect("www.packtpub.com", 80); // Send HTTP GET command to port 80
 
   while (true){
     if (getch())
