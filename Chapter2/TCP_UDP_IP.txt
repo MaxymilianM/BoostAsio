@@ -156,6 +156,8 @@ The netstat (stands for network statistics) command is used to view the TCP/IP s
 by displaying all the information about the TCP/IP connection in the current device.
 It will show information about connections, ports, and applications that are involved in the network:
 > netstat
+Display PID/Program name for all sockets:
+> netstat -ap
 
 The telnet command
 The telnet (stands for Terminal Network) command is used to access remote computers over the TCP/IP network.
