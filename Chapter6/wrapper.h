@@ -16,7 +16,8 @@ class Hive;
 class Acceptor;
 class Connection;
 
-// Class Hive definition and its members declaration
+// Class Hive (вулик) definition and its members declaration
+// This class handle io_service and work for the whole program
 class Hive : public boost::enable_shared_from_this<Hive>
 {
 private:
@@ -58,6 +59,7 @@ public:
 };
 
 // Class Acceptor definition and its members declaration
+// This class handle acceptor and strand for the whole program
 class Acceptor : public boost::enable_shared_from_this<Acceptor>
 {
 	friend class Hive;
@@ -134,6 +136,7 @@ public:
 };
 
 // Class Connection definition and its members declaration
+// This class handle socket, strand and buffer for the whole program
 class Connection : public boost::enable_shared_from_this<Connection>
 {
 	friend class Acceptor;

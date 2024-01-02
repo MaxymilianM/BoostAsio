@@ -36,6 +36,24 @@ void Hive::Poll()
 void Hive::Run()
 {
 	m_io_service.run();
+
+//   while(true) {
+//     try {
+//       boost::system::error_code ec;
+//       m_io_service.run(ec);
+//       if(ec) {
+//         global_stream_lock.lock();
+//         std::cout << "Message: " << ec << ".\n";
+//         global_stream_lock.unlock();
+//       }
+//       break;
+//     }
+//     catch(std::exception &ex) {
+//       global_stream_lock.lock();
+//       std::cout << "Message: " << ex.what() << ".\n";
+//       global_stream_lock.unlock();
+//     }
+//   }
 }
 
 // Hive::Stop definition
