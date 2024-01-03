@@ -2,16 +2,35 @@
 #include <boost/bind/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/interprocess/detail/atomic.hpp>
+#include <boost/thread/mutex.hpp>
+
+boost::mutex global_stream_lock2;
+
+void print(const char* str)
+{
+    global_stream_lock2.lock();
+	std::cout << boost::posix_time::microsec_clock::local_time() << ": " << str << std::endl;;
+    global_stream_lock2.unlock();
+}
+
+void printError(const char* str, const char* name)
+{
+    global_stream_lock2.lock();
+	std::cout << boost::posix_time::microsec_clock::local_time() << ": " << name << "::printError: " << str << std::endl;;
+    global_stream_lock2.unlock();
+}
 
 // Hive constructor
 Hive::Hive()
 : m_work_ptr(new boost::asio::io_service::work(m_io_service)), m_shutdown(0)
 {
+	print(__func__);
 }
 
 // Hive destructor
 Hive::~Hive()
 {
+	print(__func__);
 }
 
 // Hive::GetService definition
@@ -29,12 +48,14 @@ bool Hive::HasStopped()
 // Hive::Poll definition
 void Hive::Poll()
 {
+	print(__func__);
 	m_io_service.poll();
 }
 
 // Hive::Run definition
 void Hive::Run()
 {
+	print(__func__);
 	m_io_service.run();
 
 //   while(true) {
@@ -42,16 +63,16 @@ void Hive::Run()
 //       boost::system::error_code ec;
 //       m_io_service.run(ec);
 //       if(ec) {
-//         global_stream_lock.lock();
+//         global_stream_lock2.lock();
 //         std::cout << "Message: " << ec << ".\n";
-//         global_stream_lock.unlock();
+//         global_stream_lock2.unlock();
 //       }
 //       break;
 //     }
 //     catch(std::exception &ex) {
-//       global_stream_lock.lock();
+//       global_stream_lock2.lock();
 //       std::cout << "Message: " << ex.what() << ".\n";
-//       global_stream_lock.unlock();
+//       global_stream_lock2.unlock();
 //     }
 //   }
 }
@@ -59,6 +80,7 @@ void Hive::Run()
 // Hive::Stop definition
 void Hive::Stop()
 {
+	print(__func__);
 	if(boost::interprocess::ipcdetail::atomic_cas32(&m_shutdown, 1, 0) == 0)
 	{
 		m_work_ptr.reset();
@@ -70,6 +92,7 @@ void Hive::Stop()
 // Hive::Reset definition
 void Hive::Reset()
 {
+	print(__func__);
 	if( boost::interprocess::ipcdetail::atomic_cas32(&m_shutdown, 0, 1) == 1)
 	{
 		m_io_service.reset();
@@ -81,11 +104,13 @@ void Hive::Reset()
 Acceptor::Acceptor(boost::shared_ptr<Hive> hive)
 : m_hive(hive), m_acceptor(hive->GetService()), m_io_strand(hive->GetService()), m_timer(hive->GetService()), m_timer_interval(1000), m_error_state(0)
 {
+	print(__func__);
 }
 
 // Acceptor destructor
 Acceptor::~Acceptor()
 {
+	print(__func__);
 }
 
 // Acceptor::StartTimer definition
@@ -99,6 +124,7 @@ void Acceptor::StartTimer()
 // Acceptor::StartError definition
 void Acceptor::StartError( const boost::system::error_code &error)
 {
+	print(__func__);
 	if(boost::interprocess::ipcdetail::atomic_cas32(&m_error_state, 1, 0) == 0)
 	{
 		boost::system::error_code ec;
@@ -112,6 +138,7 @@ void Acceptor::StartError( const boost::system::error_code &error)
 // Acceptor::DispatchAccept definition
 void Acceptor::DispatchAccept(boost::shared_ptr<Connection> connection)
 {
+	print(__func__);
 	m_acceptor.async_accept(connection->GetSocket(), connection->GetStrand().wrap(boost::bind(&Acceptor::HandleAccept, shared_from_this(), std::placeholders::_1, connection)));
 }
 
@@ -130,6 +157,7 @@ void Acceptor::HandleTimer(const boost::system::error_code &error)
 // Acceptor::HandleAccept definition
 void Acceptor::HandleAccept(const boost::system::error_code &error, boost::shared_ptr<Connection> connection)
 {
+	print(__func__);
 	if(error || HasError() || m_hive->HasStopped())
 		connection->StartError(error);
 	else
@@ -150,26 +178,35 @@ void Acceptor::HandleAccept(const boost::system::error_code &error, boost::share
 // Acceptor::Stop definition
 void Acceptor::Stop()
 {
+	print(__func__);
 	m_io_strand.post(boost::bind(&Acceptor::HandleTimer, shared_from_this(), boost::asio::error::connection_reset));
 }
 
 // Acceptor::Accept definition
 void Acceptor::Accept(boost::shared_ptr<Connection> connection)
 {
+	print(__func__);
 	m_io_strand.post(boost::bind(&Acceptor::DispatchAccept, shared_from_this(), connection));
 }
 
 // Acceptor::Listen definition
 void Acceptor::Listen(const std::string &host, const uint16_t & port)
 {
-	boost::asio::ip::tcp::resolver resolver(m_hive->GetService());
-	boost::asio::ip::tcp::resolver::query query(host, boost::lexical_cast<std::string>(port));
-	boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
-	m_acceptor.open(endpoint.protocol());
-	m_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(false));
-	m_acceptor.bind(endpoint);
-	m_acceptor.listen(boost::asio::socket_base::max_connections);
-	StartTimer();
+	print(__func__);
+	try {
+		boost::asio::ip::tcp::resolver resolver(m_hive->GetService());
+		boost::asio::ip::tcp::resolver::query query(host, boost::lexical_cast<std::string>(port));
+		boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
+		m_acceptor.open(endpoint.protocol());
+		// Set true to avoid Exception "bind: Address already in use"
+		m_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+		m_acceptor.bind(endpoint);
+		m_acceptor.listen(boost::asio::socket_base::max_connections);
+		StartTimer();
+	}
+	catch(std::exception &ex) {
+		printError(ex.what(), "Acceptor::Listen");
+  	}
 }
 
 // Acceptor::GetHive definition
@@ -206,25 +243,34 @@ bool Acceptor::HasError()
 Connection::Connection(boost::shared_ptr<Hive> hive)
 : m_hive(hive), m_socket(hive->GetService()), m_io_strand(hive->GetService()), m_timer(hive->GetService()), m_receive_buffer_size(4096), m_timer_interval(1000), m_error_state(0)
 {
+	print(__func__);
 }
 
 // Connection destructor
 Connection::~Connection()
 {
+	print(__func__);
 }
 
 // Connection::Bind definition
 void Connection::Bind(const std::string &ip, uint16_t port)
 {
-	boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(ip), port);
-	m_socket.open(endpoint.protocol());
-	m_socket.set_option(boost::asio::ip::tcp::acceptor::reuse_address(false));
-	m_socket.bind(endpoint);
+	print(__func__);
+	try {
+		boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(ip), port);
+		m_socket.open(endpoint.protocol());
+		m_socket.set_option(boost::asio::ip::tcp::acceptor::reuse_address(false));
+		m_socket.bind(endpoint);
+	}
+	catch(std::exception &ex) {
+		printError(ex.what(), "Connection::Bind");
+  	}
 }
 
 // Connection::StartSend definition
 void Connection::StartSend()
 {
+	print(__func__);
 	if(!m_pending_sends.empty())
 	{
 		boost::asio::async_write(m_socket, boost::asio::buffer(m_pending_sends.front()), m_io_strand.wrap(boost::bind(&Connection::HandleSend, shared_from_this(), boost::asio::placeholders::error, m_pending_sends.begin())));
@@ -234,6 +280,7 @@ void Connection::StartSend()
 // Connection::StartRecv definition
 void Connection::StartRecv(int32_t total_bytes)
 {
+	print(__func__);
 	if(total_bytes > 0)
 	{
 		m_recv_buffer.resize(total_bytes);
@@ -257,6 +304,7 @@ void Connection::StartTimer()
 // Connection::StartError definition
 void Connection::StartError(const boost::system::error_code &error)
 {
+	print(__func__);
 	if(boost::interprocess::ipcdetail::atomic_cas32(&m_error_state, 1, 0) == 0)
 	{
 		boost::system::error_code ec;
@@ -270,6 +318,7 @@ void Connection::StartError(const boost::system::error_code &error)
 // Connection::HandleConnect definition
 void Connection::HandleConnect(const boost::system::error_code &error)
 {
+	print(__func__);
 	if(error || HasError() || m_hive->HasStopped())
 		StartError( error );
 	else
@@ -284,6 +333,7 @@ void Connection::HandleConnect(const boost::system::error_code &error)
 // Connection::HandleSend definition
 void Connection::HandleSend(const boost::system::error_code &error, std::list<std::vector<uint8_t> >::iterator itr)
 {
+	print(__func__);
 	if(error || HasError() || m_hive->HasStopped())
 		StartError(error);
 	else
@@ -297,6 +347,7 @@ void Connection::HandleSend(const boost::system::error_code &error, std::list<st
 // Connection::HandleRecv definition
 void Connection::HandleRecv(const boost::system::error_code &error, int32_t actual_bytes)
 {
+	print(__func__);
 	if(error || HasError() || m_hive->HasStopped())
 		StartError( error );
 	else
@@ -324,6 +375,7 @@ void Connection::HandleTimer(const boost::system::error_code &error)
 // Connection::DispatchSend definition
 void Connection::DispatchSend(std::vector<uint8_t> buffer)
 {
+	print(__func__);
 	bool should_start_send = m_pending_sends.empty();
 	m_pending_sends.push_back(buffer);
 	if(should_start_send)
@@ -333,6 +385,7 @@ void Connection::DispatchSend(std::vector<uint8_t> buffer)
 // Connection::DispatchRecv definition
 void Connection::DispatchRecv(int32_t total_bytes)
 {
+	print(__func__);
 	bool should_start_receive = m_pending_recvs.empty();
 	m_pending_recvs.push_back(total_bytes);
 	if(should_start_receive)
@@ -348,29 +401,38 @@ void Connection::DispatchTimer(const boost::system::error_code &error)
 // Connection::Connect definition
 void Connection::Connect(const std::string & host, uint16_t port)
 {
-	boost::system::error_code ec;
-	boost::asio::ip::tcp::resolver resolver(m_hive->GetService());
-	boost::asio::ip::tcp::resolver::query query(host, boost::lexical_cast<std::string>(port));
-	boost::asio::ip::tcp::resolver::iterator iterator = resolver.resolve(query);
-	m_socket.async_connect(*iterator, m_io_strand.wrap(boost::bind(&Connection::HandleConnect, shared_from_this(), std::placeholders::_1)));
-	StartTimer();
+	print(__func__);
+	try {
+		boost::system::error_code ec;
+		boost::asio::ip::tcp::resolver resolver(m_hive->GetService());
+		boost::asio::ip::tcp::resolver::query query(host, boost::lexical_cast<std::string>(port));
+		boost::asio::ip::tcp::resolver::iterator iterator = resolver.resolve(query);
+		m_socket.async_connect(*iterator, m_io_strand.wrap(boost::bind(&Connection::HandleConnect, shared_from_this(), std::placeholders::_1)));
+		StartTimer();
+	}
+	catch(std::exception &ex) {
+		printError(ex.what(), "Connection::Connect");
+  	}
 }
 
 // Connection::Disconnect definition
 void Connection::Disconnect()
 {
+	print(__func__);
 	m_io_strand.post(boost::bind(&Connection::HandleTimer, shared_from_this(), boost::asio::error::connection_reset));
 }
 
 // Connection::Recv definition
 void Connection::Recv(int32_t total_bytes)
 {
+	print(__func__);
 	m_io_strand.post(boost::bind(&Connection::DispatchRecv, shared_from_this(), total_bytes));
 }
 
 // Connection::Send definition
 void Connection::Send(const std::vector<uint8_t> &buffer)
 {
+	print(__func__);
 	m_io_strand.post(boost::bind(&Connection::DispatchSend, shared_from_this(), buffer));
 }
 

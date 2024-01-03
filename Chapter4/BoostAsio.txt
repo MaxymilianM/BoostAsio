@@ -26,15 +26,16 @@ which will be handled by the program using the event handler object.
 The io_service object has one or more instances where events are handled, which is event processing loop.
 
 # io_service:: run(), poll(), post(), dispatch()
-There are two functions that we can use to get the io_service object working for us: the run() and poll() member functions.
-The run() function blocks the program because it has to wait for the work that we assign to it,
-while the poll() function does not block the program.
-When we need to give some work to the io_service object,
-we simply use the poll() or run() functions, depending on what we need,
-and then we call the post() or dispatch() functions as needed.
-The post() function is used to command the io_service object in order to run the given handler,
-but without permitting the handler is called by the io_service object from inside this function.
-While the dispatch() function is used to call the handler in the thread
+There are two member functions that we can use to get the io_service object working for us:
+ - run(),
+ - poll().
+The run() function blocks the thread because it has to wait for the work that we assign to it,
+by using post() or dispatch() functions.
+The poll() function runs handlers (assigned by post() or dispatch() function) that are ready to run,
+without blocking, until the io_context has been stopped or there are no more ready handlers.
+The post() function is used to submit function object (handler)
+for execution to the io_service object in order to run the given handler.
+The dispatch() function is used to call the handler in the thread
 in which the run() or poll() functions are currently being invoked.
 The fundamental difference between the dispatch() and the post() functions is that
 the dispatch() function completes the work right away whenever it can,
@@ -125,12 +126,28 @@ Allows an object t that is currently managed by a std::shared_ptr named pt to sa
 additional std::shared_ptr instances pt1, pt2, ... that all share ownership of t with pt.
 class Good : public std::enable_shared_from_this<Good>{...};
 
-
 #::asio::async_write()
 Start an asynchronous operation to write all of the supplied data to a stream.
 
 #::socket::async_read_some()
-This function is used to asynchronously read data from the stream socket. The function call always returns immediately.
+This function is used to asynchronously read data from the stream socket.
+The function call always returns immediately.
+
+#asio::buffer
+The boost::asio::buffer function is used to create a buffer object to represent one of the:
+ - raw memory,
+ - an array of POD elements,
+ - a vector of POD elements,
+ - a std::string.
+A buffer object represents a contiguous region of memory as a 2-tuple consisting of a pointer and size in bytes.
+A tuple of the form {void*, size_t} specifies a mutable (modifiable) region of memory.
+Similarly, a tuple of the form {const void*, size_t} specifies a const (non-modifiable) region of memory.
+These two forms correspond to the classes mutable_buffer and const_buffer, respectively.
+
+#tcp::acceptor::set_option() and tcp::acceptor::reuse_address
+In windows, the option tcp::acceptor::reuse_address(true) equivalent to calling setsockopt() and specifying SO_REUSEADDR.
+This specifically allows multiple sockets to be bound to an address even if it is in use.
+Set true to avoid Exception "bind: Address already in use".
 
 # Simulate TCP client
 We can simulate TCP client by using telnet command: telnet IP_address port
