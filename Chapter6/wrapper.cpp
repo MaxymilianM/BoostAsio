@@ -139,6 +139,8 @@ void Acceptor::StartError( const boost::system::error_code &error)
 void Acceptor::DispatchAccept(boost::shared_ptr<Connection> connection)
 {
 	print(__func__);
+	// Prepare Acceptor for any new connection.
+	// Once connection request income, using callback HandleAccept.
 	m_acceptor.async_accept(connection->GetSocket(), connection->GetStrand().wrap(boost::bind(&Acceptor::HandleAccept, shared_from_this(), std::placeholders::_1, connection)));
 }
 
@@ -271,6 +273,8 @@ void Connection::Bind(const std::string &ip, uint16_t port)
 void Connection::StartSend()
 {
 	print(__func__);
+	// Bind HandleSend callback to the socket through async_write().
+	// Once data sent, socket object calls HandleSend callback.
 	if(!m_pending_sends.empty())
 	{
 		boost::asio::async_write(m_socket, boost::asio::buffer(m_pending_sends.front()), m_io_strand.wrap(boost::bind(&Connection::HandleSend, shared_from_this(), boost::asio::placeholders::error, m_pending_sends.begin())));
@@ -281,6 +285,8 @@ void Connection::StartSend()
 void Connection::StartRecv(int32_t total_bytes)
 {
 	print(__func__);
+	// Bind HandleRecv callback to the socket through async_read().
+	// Once any data income, socket object calls HandleRecv callback.
 	if(total_bytes > 0)
 	{
 		m_recv_buffer.resize(total_bytes);
@@ -348,6 +354,7 @@ void Connection::HandleSend(const boost::system::error_code &error, std::list<st
 void Connection::HandleRecv(const boost::system::error_code &error, int32_t actual_bytes)
 {
 	print(__func__);
+	// socket object received data and calls HandleRecv callback.
 	if(error || HasError() || m_hive->HasStopped())
 		StartError( error );
 	else
@@ -376,6 +383,7 @@ void Connection::HandleTimer(const boost::system::error_code &error)
 void Connection::DispatchSend(std::vector<uint8_t> buffer)
 {
 	print(__func__);
+	// DispatchSend was called from the thread queue.
 	bool should_start_send = m_pending_sends.empty();
 	m_pending_sends.push_back(buffer);
 	if(should_start_send)
@@ -386,6 +394,7 @@ void Connection::DispatchSend(std::vector<uint8_t> buffer)
 void Connection::DispatchRecv(int32_t total_bytes)
 {
 	print(__func__);
+	// DispatchRecv was called from the thread queue.
 	bool should_start_receive = m_pending_recvs.empty();
 	m_pending_recvs.push_back(total_bytes);
 	if(should_start_receive)
@@ -407,7 +416,8 @@ void Connection::Connect(const std::string & host, uint16_t port)
 		boost::asio::ip::tcp::resolver resolver(m_hive->GetService());
 		boost::asio::ip::tcp::resolver::query query(host, boost::lexical_cast<std::string>(port));
 		boost::asio::ip::tcp::resolver::iterator iterator = resolver.resolve(query);
-		m_socket.async_connect(*iterator, m_io_strand.wrap(boost::bind(&Connection::HandleConnect, shared_from_this(), std::placeholders::_1)));
+		boost::asio::ip::tcp::endpoint endpoint = *iterator;
+		m_socket.async_connect(endpoint, m_io_strand.wrap(boost::bind(&Connection::HandleConnect, shared_from_this(), std::placeholders::_1)));
 		StartTimer();
 	}
 	catch(std::exception &ex) {
@@ -426,6 +436,8 @@ void Connection::Disconnect()
 void Connection::Recv(int32_t total_bytes)
 {
 	print(__func__);
+	// Initiate connection to receive data after connection accepted.
+	// Placed DispatchRecv callback in the thread queue.
 	m_io_strand.post(boost::bind(&Connection::DispatchRecv, shared_from_this(), total_bytes));
 }
 
@@ -433,6 +445,8 @@ void Connection::Recv(int32_t total_bytes)
 void Connection::Send(const std::vector<uint8_t> &buffer)
 {
 	print(__func__);
+	// Initiate connection to send data after handling received data in OnRecv().
+	// Placed DispatchSend callback in the thread queue.
 	m_io_strand.post(boost::bind(&Connection::DispatchSend, shared_from_this(), buffer));
 }
 
