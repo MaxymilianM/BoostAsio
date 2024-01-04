@@ -340,6 +340,7 @@ void Connection::HandleConnect(const boost::system::error_code &error)
 void Connection::HandleSend(const boost::system::error_code &error, std::list<std::vector<uint8_t> >::iterator itr)
 {
 	print(__func__);
+	// The socket object sent data and calls HandleRecv callback.
 	if(error || HasError() || m_hive->HasStopped())
 		StartError(error);
 	else
@@ -354,7 +355,7 @@ void Connection::HandleSend(const boost::system::error_code &error, std::list<st
 void Connection::HandleRecv(const boost::system::error_code &error, int32_t actual_bytes)
 {
 	print(__func__);
-	// socket object received data and calls HandleRecv callback.
+	// The socket object received data and calls HandleRecv callback.
 	if(error || HasError() || m_hive->HasStopped())
 		StartError( error );
 	else
