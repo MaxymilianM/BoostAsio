@@ -198,7 +198,8 @@ void Acceptor::Listen(const std::string &host, const uint16_t & port)
 	try {
 		boost::asio::ip::tcp::resolver resolver(m_hive->GetService());
 		boost::asio::ip::tcp::resolver::query query(host, boost::lexical_cast<std::string>(port));
-		boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
+		boost::asio::ip::tcp::resolver::iterator iterator = resolver.resolve(query);
+		boost::asio::ip::tcp::endpoint endpoint = *iterator;
 		m_acceptor.open(endpoint.protocol());
 		// Set true to avoid Exception "bind: Address already in use"
 		m_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
@@ -289,11 +290,13 @@ void Connection::StartRecv(int32_t total_bytes)
 	// Once any data income, socket object calls HandleRecv callback.
 	if(total_bytes > 0)
 	{
+		// Using the async_read() function to read m_recv_buffer.size() data before calling HandleRecv callback.
 		m_recv_buffer.resize(total_bytes);
 		boost::asio::async_read(m_socket, boost::asio::buffer(m_recv_buffer), m_io_strand.wrap(boost::bind(&Connection::HandleRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2)));
 	}
 	else
 	{
+		// Using the async_read_some() function to read as much data as it can. It reads "some" bytes and calls the callback HandleRecv after it.
 		m_recv_buffer.resize(m_receive_buffer_size);
 		m_socket.async_read_some(boost::asio::buffer(m_recv_buffer), m_io_strand.wrap(boost::bind(&Connection::HandleRecv, shared_from_this(), std::placeholders::_1, std::placeholders::_2)));
 	}
