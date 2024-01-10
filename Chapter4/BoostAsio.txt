@@ -25,6 +25,10 @@ In programming, event is an action or occurrence detected by a program,
 which will be handled by the program using the event handler object.
 The io_service object has one or more instances where events are handled, which is event processing loop.
 
+# asio::io_service
+This class is a central component in the Boost.Asio I/O infrastructure.
+It provides access to the network I/O services of the underlying operating system. 
+
 # io_service:: run(), poll(), post(), dispatch()
 There are two member functions that we can use to get the io_service object working for us:
  - run(),
@@ -69,9 +73,9 @@ with the first argument given from async_wait(), with type boost::system::error_
 #ip::tcp::socket 
 The ::socket class represents an active socket.
 Basically, there are two types of sockets (Berkeley Sockets API):
-- Active socket - a socket intended to be used to send and receive data to and from a remote application
+- Active socket (asio::ip::tcp::socket) - a socket intended to be used to send and receive data to and from a remote application
   or to initiate a connection establishment process with it.
-- Passive socket - is the one used to passively wait for incoming connection requests from remote applications.
+- Passive socket (asio::ip::tcp::acceptor) - is the one used to passively wait for incoming connection requests from remote applications.
   Passive sockets don't take part in user data transmission.
 
 #ip::tcp:: resolver, ::query, ::iterator, ::endpoint
@@ -96,6 +100,11 @@ The ::acceptor class represents a passive socket.
 Passive socket - is the one used to passively wait for incoming connection requests from remote applications.
 Passive sockets are used only in server applications or hybrid applications that may play both roles of the client and server.
 Passive sockets are defined only for the TCP protocol.
+The acceptor socket is only used to establish connections with client applications and is not used in the further communication process.
+When processing a pending connection request, the acceptor socket allocates a new active socket,
+binds it to an endpoint chosen by the operating system, and connects it to the corresponding client application that has issued that connection request.
+Then, this new active socket is ready to be used for communication with the client.
+The acceptor socket becomes available to process the next pending connection request.
 The ::acceptor object is used for accepting new socket connections by using acceptor::async_accept() function.
 The program calls the acceptor::open() function to open the acceptor socket by using the protocol that is retrieved from the endpoint variable.
 Then, by using the acceptor::set_option() function, we set an option on the acceptor to not reuse the address.
@@ -115,11 +124,22 @@ The ::listen() listen for incoming connection requests.
 This call switches the acceptor socket into the state in which it listens for incoming connection requests.
 The argument (::max_connections) that the listen() method accepts as an argument specifies the size of the queue
 maintained by the operating system to which it puts connection requests arriving from the clients.
+The requests stay in the queue and are waiting for the server application to de-queue and process them.
+When the queue becomes full, the new connection requests are rejected by the operating system.
 Before ::listen() call all client's connection requests are rejected by the operating system.
 After acceptor socket  switched into listening mode, the operating system allocates a queue for pending connection requests
 associated with this acceptor socket and starts accepting connection request addressed to it.
 The requests stay in the queue and are waiting for the server application to de-queue and process them. 
 When the queue becomes full, the new connection requests are rejected by the operating system.
+
+#::acceptor::accept()
+This method accepts an active socket as an argument and performs several operations.
+First, it checks the queue associated with the acceptor socket containing pending connection requests.
+If the queue is empty, the method blocks execution until a new connection request arrives to an endpoint to which the acceptor socket is bound
+and the operating system puts it in the queue.
+If at least one connection request is available in the queue, the one on the top of the queue is extracted from it and processed.
+The active socket that was passed to the accept() method as an argument is connected to the corresponding client application
+which issued the connection request.
 
 #::resolver::query()
 An object of the resolver::query class representing a DNS name resolution query.
