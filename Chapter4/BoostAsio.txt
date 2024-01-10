@@ -1,3 +1,10 @@
+# The Boost.Asio
+The Boost.Asio library is implemented as a framework, which exploits an inversion of control (IoC pattern) approach.
+After one or more asynchronous operations are initiated, the application hands over one of its threads of execution to the library,
+and the latter uses this thread to run the event loop and invoke the callbacks provided by the application
+to notify it about the completion of the previously initiated asynchronous operation.
+The results of asynchronous operations are passed to the callback as arguments.
+
 
 # Boost.Thread with Boost.Asio
 The Boost libraries also have the Boost.Thread library that is used to execute tasks concurrently,
@@ -141,11 +148,13 @@ If at least one connection request is available in the queue, the one on the top
 The active socket that was passed to the accept() method as an argument is connected to the corresponding client application
 which issued the connection request.
 
+#tcp::acceptor::set_option() and tcp::acceptor::reuse_address
+In windows, the option tcp::acceptor::reuse_address(true) equivalent to calling setsockopt() and specifying SO_REUSEADDR.
+This specifically allows multiple sockets to be bound to an address even if it is in use.
+Set true to avoid Exception "bind: Address already in use".
+
 #::resolver::query()
 An object of the resolver::query class representing a DNS name resolution query.
-
-#::basic_stream_socket 
-Provides stream-oriented socket functionality (write and read the socket).
 
 #::enable_shared_from_this
 Allows an object t that is currently managed by a std::shared_ptr named pt to safely generate
@@ -159,6 +168,9 @@ Start an asynchronous operation to write all of the supplied data to a stream.
 This function is used to asynchronously read data from the stream socket.
 The function call always returns immediately.
 
+#::basic_stream_socket 
+Provides stream-oriented socket functionality (write and read the socket).
+
 #asio::buffer
 The boost::asio::buffer function is used to create a buffer object to represent one of the:
  - raw memory,
@@ -169,11 +181,85 @@ A buffer object represents a contiguous region of memory as a 2-tuple consisting
 A tuple of the form {void*, size_t} specifies a mutable (modifiable) region of memory.
 Similarly, a tuple of the form {const void*, size_t} specifies a const (non-modifiable) region of memory.
 These two forms correspond to the classes mutable_buffer and const_buffer, respectively.
+The asio::buffer() free function has 28 overloads that accept a variety of representations of a buffer
+and return an object of either the asio::mutable_buffers_1 or asio::const_buffers_1 classes.
+If the buffer argument passed to the asio::buffer() function is a read-only type, the function returns an object of the asio::const_buffers_1 class;
+otherwise, an object of the asio::mutable_buffers_1 class is returned.
 
-#tcp::acceptor::set_option() and tcp::acceptor::reuse_address
-In windows, the option tcp::acceptor::reuse_address(true) equivalent to calling setsockopt() and specifying SO_REUSEADDR.
-This specifically allows multiple sockets to be bound to an address even if it is in use.
-Set true to avoid Exception "bind: Address already in use".
+# asio::mutable_buffer and asio::const_buffer
+::mutable_buffer represents a writable buffer (buffer for an input operation, such as ::socket::receive() or the asio::read()), 
+::const_buffer represents a read-only one (buffer for an output operation such as ::socket::send() or the asio::write()).
+However, they are not used in Boost.Asio I/O functions and methods directly.
+Instead, the MutableBufferSequence and ConstBufferSequence concepts are introduced
+The MutableBufferSequence concept - is a collection of the asio::mutable_buffer objects.
+The ConstBufferSequence concept   - is a collection of the asio::const_buffer objects.
+std::vector<asio::mutable_buffer> class satisfies the requirements of the MutableBufferSequence concept.
+
+# asio::mutable_buffers_1 and asio::const_buffers_1
+The asio::mutable_buffers_1 and asio::const_buffers_1 classes are adapters of the asio::mutable_buffer and asio::const_buffer classes, respectively.
+They provide an interface and behavior that satisfy the requirements of the MutableBufferSequence and ConstBufferSequence concepts,
+which allows us to pass these adapters as arguments to Boost.Asio I/O functions and methods.
+
+# asio::streambuf
+It's typedef for asio::basic_streambuf which is inherited from std::streambuf.
+It means that it can be used as a stream buffer for STL stream classes.
+In addition to this, several I/O functions provided by Boost.Asio deal with buffers that are represented as objects of this class.
+We can work with an object of the asio::streambuf class just like we would work with any stream buffer class
+that is inherited from the std::streambuf class. For example, we can assign this object to a stream
+(for example, std::istream, std::ostream, or std::iostream, depending on our needs),
+and then, use stream's operator<<() and operator>>() operators to write and read data to and from the stream.
+Usually, in a typical client or server application, the data will be written to the buf stream buffer by the Boost.Asio input function
+such as asio::read(), which accepts a stream buffer object as an argument and reads data from the socket to that buffer.
+
+# ::write_some()
+This method accepts an object that represents a composite buffer as an argument,
+and as its name suggests, writes some amount of data from the buffer to the socket.
+If the method succeeds, the return value indicates the number of bytes written.
+The method may not send all the data provided to it through the buffers argument at once.
+The method only guarantees that at least one byte will be written if an error does not occur.
+In order to write all the data from the buffer to the socket, we may need to call this method several times.
+
+# ::read_some()
+This method accepts an object that represents a writable buffer (single or composite) as an argument,
+and as its name suggests, reads some amount of data from the socket to the buffer.
+If the method succeeds, the return value indicates the number of bytes read.
+There is no way to control how many bytes the method will read.
+The method only guarantees that at least one byte will be read if an error does not occur.
+In order to read a certain amount of data from the socket, we may need to call the method several times.
+
+# ::async_write_some()
+This method initiates the write operation and returns immediately.
+Write some amount of data from the buffer to the socket.
+This method guarantees that at least one byte will be written during the corresponding asynchronous operation if an error does not occur.
+It accepts an object that represents a buffer that contains the data to be written to the socket as its first argument.
+The second argument is a callback, which will be called by Boost.Asio when an initiated operation is completed.
+This argument can be a function pointer, functor, or any other object that satisfies the requirements of the WriteHandler concept.
+
+# ::cancel()
+This method cancel the initiated connection operation.
+If the operation has not yet finished, it will be canceled
+and the corresponding callback will be invoked with an argument
+that specifies the error code containing the asio::error::operation_aborted value
+to notify that the operation was canceled.
+However, if the operation has already finished, calling the cancel() method has no effect.
+When the callback function returns, the worker thread exits the event loop.
+
+# socket::shutdown()
+Shut down the socket to let the server know that we've sent the whole request.
+It only disables writing, reading, or both the operations on the socket
+and sends a service message to the peer application notifying about this fact.
+Shutting down a socket never results in deallocating the socket.
+
+# socket::close()
+Closing a socket assumes returning the socket and all the other resources associated with it back to the operating system.
+Just like memory, a process or a thread, a file handle or a mutex, a socket is a resource of an operating system.
+And like any other resource, a socket should be returned back to the operating system. Otherwise, a resource leak may occur,
+which may eventually lead to the exhaustion of the resource and to the application's fault or instability of the whole operating system.
+Serious issues that may occur when sockets are not closed make closing a very important operation.
+The main difference between shutting down and closing a TCP socket is that closing interrupts the connection if one is established
+and, eventually, deallocates the socket and returns it back to the operating system, while shutting down only disables writing, reading,
+or both the operations on the socket and sends a service message to the peer application notifying about this fact.
+Shutting down a socket never results in deallocating the socket.
 
 # Simulate TCP client
 We can simulate TCP client by using telnet command: telnet IP_address port
