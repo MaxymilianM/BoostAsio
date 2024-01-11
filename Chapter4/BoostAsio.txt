@@ -52,11 +52,13 @@ The fundamental difference between the dispatch() and the post() functions is th
 the dispatch() function completes the work right away whenever it can,
 while the post() function always queues the work.
 
-#io_service:: work
+#io_service::work
 Class to inform the io_service when it has work to do. Using run() or poll().
 The work class is used to inform the io_service when work starts and finishes.
 This ensures that the io_service object's run() function will not exit while work is underway,
 and that it does exit when there is no unfinished work remaining.
+The object of the asio::io_service::work class keeps threads running event loop from exiting this loop
+when there are no pending asynchronous operations.
 After version 1.84.0 work Deprecated: (Use executor_work_guard).
 
 #io_service:: strand
